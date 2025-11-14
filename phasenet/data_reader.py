@@ -193,9 +193,9 @@ class DataReader:
         if format in ["numpy", "mseed", "sac"]:
             self.data_dir = kwargs["data_dir"]
             try:
-                csv = pd.read_csv(kwargs["data_list"], header=0, sep="[,|\s+]", engine="python")
-            except:
                 csv = pd.read_csv(kwargs["data_list"], header=0, sep="\t")
+            except:
+                csv = pd.read_csv(kwargs["data_list"], header=0, sep="[,|\s+]", engine="python")
             self.data_list = csv["fname"]
             self.num_data = len(self.data_list)
         elif format == "hdf5":
@@ -433,7 +433,7 @@ class DataReader:
             if len(station_ids) > 1:
                 print(f"{station_ids = }")
                 raise
-            assert (len(station_ids) == 1, f"Error: {fname} has multiple stations {station_ids}")
+            assert len(station_ids) == 1, f"Error: {fname} has multiple stations {station_ids}"
 
             begin_time = min([st.stats.starttime for st in traces])
             end_time = max([st.stats.endtime for st in traces])
