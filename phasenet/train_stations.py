@@ -5,6 +5,7 @@ import argparse
 import os
 import time
 import logging
+import pandas as pd
 from tqdm import tqdm
 import multiprocessing
 from functools import partial
@@ -22,6 +23,10 @@ from util import EMA, LMA
 
 tf.compat.v1.disable_eager_execution()
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = (
+    "2"  # Suppresses INFO messages, shows WARNING and ERROR
+)
 
 
 def read_args():
@@ -79,6 +84,11 @@ def read_args():
     parser.add_argument(
         "--save_prob", action="store_true", help="If save result for test"
     )
+    parser.add_argument(
+        "--station",
+        default=None,
+        help="Name of single station to train on (default: None)",
+    )
     args = parser.parse_args()
 
     return args
@@ -86,7 +96,7 @@ def read_args():
 
 def train_fn(args, data_reader, data_reader_valid=None):
     current_time = time.strftime("%y%m%d-%H%M%S")
-    log_dir = os.path.join(args.log_dir, current_time)
+    log_dir = os.path.join(args.log_dir, "_".join([args.station, current_time]))
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
     logging.info("Training log: {}".format(log_dir))
@@ -349,4 +359,28 @@ def main(args):
 
 if __name__ == "__main__":
     args = read_args()
+
+    # Read train_list
+    csv_train = pd.read_csv(args.train_list, sep="\t", index_col=0)
+    csv_train_stations = csv_train["station"].to_list()
+
+    if args.station is None:
+        print("Training on all stations")
+        args.station = "ALL"
+
+    elif args.station in csv_train_stations:
+        print(f"Training on information from single station: '{args.station}'")
+        # Apply station filter and create new CSV with filtered data
+        csv_train = csv_train.query("station == @args.station")
+        args.train_list = "{1}_{0}{2}".format(
+            args.station, *os.path.splitext(args.train_list)
+        )
+        csv_train.to_csv(args.train_list, sep="\t")
+
+    else:
+        raise ValueError(
+            f"Invalid station '{args.station}'.\n"
+            f"Valid stations are: {', '.join(csv_train_stations)}."
+        )
+
     main(args)
