@@ -85,18 +85,19 @@ def read_args():
         "--save_prob", action="store_true", help="If save result for test"
     )
     parser.add_argument(
-        "--station",
+        "--stations",
+        nargs="+",
         default=None,
-        help="Name of single station to train on (default: None)",
+        help="List of single station to individually train on, or None, which selects all)",
     )
     args = parser.parse_args()
 
     return args
 
 
-def train_fn(args, data_reader, data_reader_valid=None):
+def train_fn(args, station, data_reader, data_reader_valid=None):
     current_time = time.strftime("%y%m%d-%H%M%S")
-    log_dir = os.path.join(args.log_dir, "_".join([args.station, current_time]))
+    log_dir = os.path.join(args.log_dir, "_".join([station, current_time]))
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
     logging.info("Training log: {}".format(log_dir))
@@ -222,7 +223,8 @@ def train_fn(args, data_reader, data_reader_valid=None):
     return 0
 
 
-def test_fn(args, data_reader):
+def test_fn(args, station, data_reader):
+    args.result_dir = "_".join(args.result_dir, station)
     current_time = time.strftime("%y%m%d-%H%M%S")
     logging.info("{} log: {}".format(args.mode, current_time))
     if args.model_dir is None:
@@ -319,20 +321,22 @@ def test_fn(args, data_reader):
     return 0
 
 
-def main(args):
+def main(args, station):
     logging.basicConfig(format="%(asctime)s %(message)s", level=logging.INFO)
     tf.train.Coordinator()  # coord
 
     if (args.mode == "train") or (args.mode == "train_valid"):
         with tf.compat.v1.name_scope("create_inputs"):
+            train_list = filter_data(args.train_list, station)
             data_reader = DataReader_train(
-                format=args.format, data_dir=args.train_dir, data_list=args.train_list
+                format=args.format, data_dir=args.train_dir, data_list=train_list
             )
             if args.mode == "train_valid":
+                valid_list = filter_data(args.train_list, station)
                 data_reader_valid = DataReader_train(
                     format=args.format,
                     data_dir=args.valid_dir,
-                    data_list=args.valid_list,
+                    data_list=valid_list,
                 )
                 logging.info(
                     "Dataset size: train {}, valid {}".format(
@@ -342,14 +346,15 @@ def main(args):
             else:
                 data_reader_valid = None
                 logging.info("Dataset size: train {}".format(data_reader.num_data))
-        train_fn(args, data_reader, data_reader_valid)
+        train_fn(args, station, data_reader, data_reader_valid)
 
     elif args.mode == "test":
         with tf.compat.v1.name_scope("create_inputs"):
+            test_list = filter_data(args.test_list, station)
             data_reader = DataReader_test(
-                format=args.format, data_dir=args.test_dir, data_list=args.test_list
+                format=args.format, data_dir=args.test_dir, data_list=test_list
             )
-        test_fn(args, data_reader)
+        test_fn(args, station, data_reader)
 
     else:
         print("mode should be: train, train_valid, or test")
@@ -357,13 +362,14 @@ def main(args):
     return
 
 
-def filter_data(data_list, value=None, field="station"):
+def filter_data(
+    data_list: str, value: str | None = None, field: str = "station"
+) -> str:
     csv = pd.read_csv(data_list, sep="\t", index_col=0)
     csv_values = sorted(csv[field].unique())
     if value not in csv_values:
         raise ValueError(
-            f"Invalid {field} '{value}'.\n"
-            f"Valid stations are: {', '.join(csv_values)}."
+            f"Invalid {field} '{value}'.\nValid stations are: {', '.join(csv_values)}."
         )
     else:
         csv_filtered = csv.query(f"{field} == @value")
@@ -376,16 +382,23 @@ def filter_data(data_list, value=None, field="station"):
 if __name__ == "__main__":
     args = read_args()
 
-    # Filter train/valid/test data list if station is given
-    if args.station is not None:
-        if args.train_list is not None:
-            args.train_list = filter_data(args.train_list, args.station)
-            print(f"Single station selected for training: '{args.station}'")
-        if args.valid_list is not None:
-            args.valid_list = filter_data(args.valid_list, args.station)
-            print(f"Single station selected for validation: '{args.station}'")
-        if args.test_list is not None:
-            args.test_list = filter_data(args.test_list, args.station)
-            print(f"Single station selected for testing: '{args.station}'")
+    # Get all possible stations from the data list if none selected
+    if args.stations is None:
+        data_list = args.test_list if args.mode == "test" else args.train_list
+        csv = pd.read_csv(data_list, sep="\t", index_col=0)
+        args.stations = sorted(csv["station"].unique())
+    # Drop duplicates maintaining order
+    else:
+        args.stations = [*dict.fromkeys(args.stations)]
 
-    main(args)
+    # Show selected stations and iterate over all of them
+    print(f"\nSelected stations ({len(args.stations)}): {', '.join(args.stations)}")
+    for station in args.stations:
+        print("\n\n" + "=" * (10 + len(station)))
+        print(f"==== {station} ====")
+        print("=" * (10 + len(station)) + "\n")
+        try:
+            tf.compat.v1.reset_default_graph()  # hotfix: allows training multiple models
+            main(args, station)
+        except Exception as e:
+            print(f"Station {station} could not be trained due to: {e}")
