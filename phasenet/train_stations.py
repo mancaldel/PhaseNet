@@ -359,10 +359,10 @@ def main(args):
 
 def filter_data(data_list, value=None, field="station"):
     csv = pd.read_csv(data_list, sep="\t", index_col=0)
-    csv_values = csv[field].to_list()
+    csv_values = sorted(csv[field].unique())
     if value not in csv_values:
         raise ValueError(
-            f"Invalid station '{args.station}'.\n"
+            f"Invalid {field} '{value}'.\n"
             f"Valid stations are: {', '.join(csv_values)}."
         )
     else:
