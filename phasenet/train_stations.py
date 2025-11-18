@@ -357,30 +357,29 @@ def main(args):
     return
 
 
+def filter_data(data_list, value=None, field="station"):
+    csv = pd.read_csv(data_list, sep="\t", index_col=0)
+    csv_values = csv[field].to_list()
+    if value not in csv_values:
+        raise ValueError(
+            f"Invalid station '{args.station}'.\n"
+            f"Valid stations are: {', '.join(csv_values)}."
+        )
+    else:
+        csv_filtered = csv.query(f"{field} == @value")
+        data_list_filtered = "{1}_{0}{2}".format(field, *os.path.splitext(data_list))
+        csv_filtered.to_csv(data_list_filtered, sep="\t")
+        print(f"Single station selected for training: '{args.station}'")
+
+    return data_list_filtered
+
+
 if __name__ == "__main__":
     args = read_args()
 
-    # Read train_list
-    csv_train = pd.read_csv(args.train_list, sep="\t", index_col=0)
-    csv_train_stations = csv_train["station"].to_list()
-
-    if args.station is None:
-        print("Training on all stations")
-        args.station = "ALL"
-
-    elif args.station in csv_train_stations:
-        print(f"Training on information from single station: '{args.station}'")
-        # Apply station filter and create new CSV with filtered data
-        csv_train = csv_train.query("station == @args.station")
-        args.train_list = "{1}_{0}{2}".format(
-            args.station, *os.path.splitext(args.train_list)
-        )
-        csv_train.to_csv(args.train_list, sep="\t")
-
-    else:
-        raise ValueError(
-            f"Invalid station '{args.station}'.\n"
-            f"Valid stations are: {', '.join(csv_train_stations)}."
-        )
+    # Filter train/valid/test data list if station is given
+    if args.station is not None:
+        if args.train_list is not None:
+            args.train_list = filter_data(args.train_list, args.station)
 
     main(args)
