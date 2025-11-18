@@ -369,7 +369,6 @@ def filter_data(data_list, value=None, field="station"):
         csv_filtered = csv.query(f"{field} == @value")
         data_list_filtered = "{1}_{0}{2}".format(field, *os.path.splitext(data_list))
         csv_filtered.to_csv(data_list_filtered, sep="\t")
-        print(f"Single station selected for training: '{args.station}'")
 
     return data_list_filtered
 
@@ -381,5 +380,12 @@ if __name__ == "__main__":
     if args.station is not None:
         if args.train_list is not None:
             args.train_list = filter_data(args.train_list, args.station)
+            print(f"Single station selected for training: '{args.station}'")
+        if args.valid_list is not None:
+            args.valid_list = filter_data(args.valid_list, args.station)
+            print(f"Single station selected for validation: '{args.station}'")
+        if args.test_list is not None:
+            args.test_list = filter_data(args.test_list, args.station)
+            print(f"Single station selected for testing: '{args.station}'")
 
     main(args)
