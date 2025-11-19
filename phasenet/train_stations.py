@@ -68,14 +68,12 @@ def read_args():
     )
     parser.add_argument("--format", default="numpy", help="Input data format")
     parser.add_argument(
-        "--train_dir", default="./dataset/waveform_train/", help="Input file directory"
+        "--data_dir", default="./dataset/waveform_train/", help="Input file directory"
     )
     parser.add_argument(
         "--train_list", default="./dataset/waveform.csv", help="Input csv file"
     )
-    parser.add_argument("--valid_dir", default=None, help="Input file directory")
     parser.add_argument("--valid_list", default=None, help="Input csv file")
-    parser.add_argument("--test_dir", default=None, help="Input file directory")
     parser.add_argument("--test_list", default=None, help="Input csv file")
     parser.add_argument("--result_dir", default="results", help="result directory")
     parser.add_argument(
@@ -329,13 +327,13 @@ def main(args, station):
         with tf.compat.v1.name_scope("create_inputs"):
             train_list = filter_data(args.train_list, station)
             data_reader = DataReader_train(
-                format=args.format, data_dir=args.train_dir, data_list=train_list
+                format=args.format, data_dir=args.data_dir, data_list=train_list
             )
             if args.mode == "train_valid":
                 valid_list = filter_data(args.valid_list, station)
                 data_reader_valid = DataReader_train(
                     format=args.format,
-                    data_dir=args.valid_dir,
+                    data_dir=args.data_dir,
                     data_list=valid_list,
                 )
                 logging.info(
@@ -352,7 +350,7 @@ def main(args, station):
         with tf.compat.v1.name_scope("create_inputs"):
             test_list = filter_data(args.test_list, station)
             data_reader = DataReader_test(
-                format=args.format, data_dir=args.test_dir, data_list=test_list
+                format=args.format, data_dir=args.data_dir, data_list=test_list
             )
         test_fn(args, station, data_reader)
 
