@@ -171,7 +171,10 @@ def train_fn(args, station, data_reader, data_reader_valid=None):
             if data_reader_valid is not None:
                 valid_loss = LMA()
                 progressbar = tqdm(
-                    range(0, data_reader_valid.num_data, args.batch_size), desc="Valid:"
+                    range(0, data_reader_valid.num_data, args.batch_size),
+                    desc="{}, epoch {}, loss={:.6f}, mean={:.6f}".format(
+                            "VALIDATION".center(len(log_dir.split('/')[-1])), epoch, loss_batch, valid_loss.value
+                        )
                 )
                 for _ in progressbar:
                     loss_batch, preds_batch, X_batch, Y_batch, fname_batch = sess.run(
@@ -186,9 +189,8 @@ def train_fn(args, station, data_reader, data_reader_valid=None):
                     )
                     valid_loss(loss_batch)
                     progressbar.set_description(
-                        "valid, loss={:.6f}, mean={:.6f}".format(
-                            loss_batch, valid_loss.value
-                        )
+                        "{}, epoch {}, loss={:.6f}, mean={:.6f}".format(
+                            "VALIDATION".center(len(log_dir.split('/')[-1])), epoch, loss_batch, valid_loss.value)
                     )
                 if valid_loss.value < best_valid_loss:
                     best_valid_loss = valid_loss.value
