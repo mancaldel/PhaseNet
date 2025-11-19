@@ -88,7 +88,7 @@ def read_args():
         "--stations",
         nargs="+",
         default=None,
-        help="List of single station to individually train on, or None, which selects all)",
+        help="List of single station to individually train on, or None, which selects all",
     )
     args = parser.parse_args()
 
@@ -332,7 +332,7 @@ def main(args, station):
                 format=args.format, data_dir=args.train_dir, data_list=train_list
             )
             if args.mode == "train_valid":
-                valid_list = filter_data(args.train_list, station)
+                valid_list = filter_data(args.valid_list, station)
                 data_reader_valid = DataReader_train(
                     format=args.format,
                     data_dir=args.valid_dir,
@@ -373,10 +373,14 @@ def filter_data(
         )
     else:
         csv_filtered = csv.query(f"{field} == @value")
-        data_list_filtered = "{1}_{0}{2}".format(field, *os.path.splitext(data_list))
-        csv_filtered.to_csv(data_list_filtered, sep="\t")
+        fname = "{1}_{0}{2}".format(value, *os.path.splitext(os.path.basename(data_list)))
+        fdir = os.path.join(os.path.dirname(data_list), "station_lists")
+        filtered_list = os.path.join(fdir, fname)
+        if not os.path.exists(fdir):
+            os.mkdir(fdir)
+        csv_filtered.to_csv(filtered_list, sep="\t")
 
-    return data_list_filtered
+    return filtered_list
 
 
 if __name__ == "__main__":
