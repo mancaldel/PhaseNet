@@ -197,11 +197,39 @@ def test_fn(args, data_reader):
             picks_ = extract_picks(preds_batch, fname_batch)
             picks.extend(picks_)
             true_picks.extend(convert_true_picks(fname_batch, itp_batch, its_batch))
-            if args.plot_figure:
-                plot_waveform(data_reader.config, X_batch, preds_batch, label=Y_batch, fname=fname_batch, 
-                              itp=itp_batch, its=its_batch, figure_dir=figure_dir)
 
-        save_picks(picks, args.result_dir)
+            if args.plot_figure:
+                for i in range(preds_batch.shape[0]):
+                    plot_waveform(X_batch[i], preds_batch[i], fname_batch[i].decode(), Y_batch[i], itp=itp_batch[i], its=its_batch[i], figure_dir=figure_dir)
+
+        # save_picks(picks, args.result_dir)
+        if len(picks) > 0:
+            # save_picks(picks, args.result_dir, amps=amps, fname=args.result_fname+".csv")
+            # save_picks_json(picks, args.result_dir, dt=data_reader.dt, amps=amps, fname=args.result_fname+".json")
+            df = pd.DataFrame(picks)
+            # df["fname"] = df["file_name"]
+            # df["id"] = df["station_id"]
+            # df["timestamp"] = df["phase_time"]
+            # df["prob"] = df["phase_prob"]
+            # df["type"] = df["phase_type"]
+
+            base_columns = [
+                "station_id",
+                "begin_time",
+                "phase_index",
+                "phase_time",
+                "phase_score",
+                "phase_type",
+                "file_name",
+            ]
+            # if args.amplitude:
+            #     base_columns.append("phase_amplitude")
+            #     base_columns.append("phase_amp")
+            #     df["phase_amp"] = df["phase_amplitude"]
+
+            df = df[base_columns]
+            df.to_csv(os.path.join(args.result_dir, "picks.csv"), index=False)
+
         metrics = calc_performance(picks, true_picks, tol=3.0, dt=data_reader.config.dt)
         flog.write("mean loss: {}\n".format(test_loss))
         flog.close()
