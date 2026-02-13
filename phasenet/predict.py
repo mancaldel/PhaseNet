@@ -13,6 +13,7 @@ import tensorflow as tf
 from data_reader import DataReader_mseed_array, DataReader_pred
 from model import ModelConfig, UNet
 from postprocess import (
+    convert_true_picks,
     extract_amplitude,
     extract_picks,
     save_picks,
@@ -109,6 +110,7 @@ def pred_fn(args, data_reader, figure_dir=None, prob_dir=None, log_dir=None):
             multiprocessing.set_start_method("spawn")
             pool = multiprocessing.Pool(multiprocessing.cpu_count())
 
+        true_picks = []
         for _ in tqdm(range(0, data_reader.num_data, batch_size), desc="Pred"):
             if args.amplitude:
                 pred_batch, X_batch, amp_batch, fname_batch, t0_batch, station_batch = sess.run(
@@ -116,11 +118,13 @@ def pred_fn(args, data_reader, figure_dir=None, prob_dir=None, log_dir=None):
                     feed_dict={model.drop_rate: 0, model.is_training: False},
                 )
             #    X_batch, amp_batch, fname_batch, t0_batch = sess.run([batch[0], batch[1], batch[2], batch[3]])
+                true_picks.extend(convert_true_picks(fname_batch, batch[3], batch[4]))
             else:
                 pred_batch, X_batch, fname_batch, t0_batch, station_batch = sess.run(
                     [model.preds, batch[0], batch[1], batch[2], batch[3]],
                     feed_dict={model.drop_rate: 0, model.is_training: False},
                 )
+                true_picks.extend(convert_true_picks(fname_batch, batch[2], batch[3]))
             #    X_batch, fname_batch, t0_batch = sess.run([model.preds, batch[0], batch[1], batch[2]])
             # pred_batch = []
             # for i in range(0, len(X_batch), 1):
