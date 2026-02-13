@@ -1,5 +1,5 @@
 import matplotlib
-matplotlib.use("agg")
+# matplotlib.use("agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import os
@@ -157,7 +157,7 @@ def plot_residual(diff_p, diff_s, diff_ps, tol, dt):
 def plot_waveform(data, pred, fname, label=None, 
                   itp=None, its=None, itps=None,
                   itp_pred=None, its_pred=None, itps_pred=None,
-                  figure_dir="./", dt=0.01):
+                  figure_dir="./", dt=0.01, close_figure=True):
 
     t = np.arange(0, pred.shape[0]) * dt
     box = dict(boxstyle='round', facecolor='white', alpha=1)
@@ -174,7 +174,7 @@ def plot_waveform(data, pred, fname, label=None,
         for j in range(len(itp)):
             lb = "P" if j==0 else ""
             plt.plot([itp[j]*dt, itp[j]*dt], [tmp_min, tmp_max], 'C0', label=lb, linewidth=0.5)
-        for j in range(len(its[i])):
+        for j in range(len(its)):
             lb = "S" if j==0 else ""
             plt.plot([its[j]*dt, its[j]*dt], [tmp_min, tmp_max], 'C1', label=lb, linewidth=0.5)
     if (itps is not None):
@@ -265,8 +265,10 @@ def plot_waveform(data, pred, fname, label=None,
         os.makedirs(os.path.dirname(os.path.join(figure_dir, fname)), exist_ok=True)
         plt.savefig(os.path.join(figure_dir, fname+'.png'), bbox_inches='tight')
 
-    plt.close()
-    return 0
+    if close_figure:
+        plt.close()
+
+    return plt.gcf().figure
 
 
 def plot_array(config, data, pred, label=None,

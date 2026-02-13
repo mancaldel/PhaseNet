@@ -1,22 +1,27 @@
 {
-    "image": "mcr.microsoft.com/devcontainers/universal:2",
+    "image": "tensorflow/tensorflow:2.14.0-gpu-jupyter",
     "hostRequirements": {
-      "cpus": 4
+        "cpus": 4
     },
     "waitFor": "onCreateCommand",
-    "updateContentCommand": "python3 -m pip install -r requirements.txt",
+    "updateContentCommand": "python3 -m pip install fastapi obspy pandas pydantic scikit-learn scipy tqdm",
     "postCreateCommand": "",
     "customizations": {
-      "codespaces": {
-        "openFiles": [
-        ]
-      },
-      "vscode": {
-        "extensions": [
-          "ms-toolsai.jupyter",
-          "ms-python.python"
-        ]
-      }
-    }
-  }
-  
+        "codespaces": {
+            "openFiles": []
+        },
+        "vscode": {
+            "extensions": [
+                "ms-toolsai.jupyter",
+                "ms-python.python"
+            ]
+        }
+    },
+    "name": "PhaseNet",
+    "runArgs": [
+        "-it",
+        "--gpus",
+        "all"
+    ],
+    "shutdownAction": "none"
+}

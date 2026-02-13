@@ -1,0 +1,29 @@
+FROM tensorflow/tensorflow:2.14.0-gpu-jupyter
+
+# Update system and install basics
+RUN apt update && \
+	apt install -y git curl
+    # rm -rf /var/lib/apt/lists/*
+
+# Install required Python packages (pinned versions)
+RUN pip install --no-cache-dir \
+    fastapi==0.112.2 \
+    obspy==1.4.1 \
+    pandas==2.1.4 \
+    pydantic==2.8.2 \
+    scikit-learn==1.5.1 \
+    scipy==1.14.1 \
+    tqdm==4.66.5
+
+# Create a non-root user (recommended)
+RUN useradd -ms /bin/bash user
+USER user
+
+# Default behavior
+ENV TF_CPP_MIN_LOG_LEVEL=1 PYTHONUNBUFFERED=1
+WORKDIR /workspace/PhaseNet
+CMD ["bash"]
+
+# Build and run instructions
+# docker build -t phasenet-tf214 -f dockerfile_gpu .
+# docker run -it --name phasenet_gpu --gpus all -v ~/PROJECTS/PhaseNet_manu:/workspace/PhaseNet -p 8888:8888 -p 8000:8000 phasenet-tf214 bash
