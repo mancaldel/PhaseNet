@@ -173,11 +173,13 @@ def pred_fn(args, data_reader, figure_dir=None, prob_dir=None, log_dir=None):
             #         index=False,
             #     )
 
+            # Transform file names for plots and probs
+            if not (isinstance(fname_batch, np.ndarray) or isinstance(fname_batch, list)):
+                fname_batch = [fname_batch.decode().rstrip(".mseed") + "_" + x.decode() for x in station_batch]
+            else:
+                fname_batch = [x.decode() for x in fname_batch]
+
             if args.plot_figure:
-                if not (isinstance(fname_batch, np.ndarray) or isinstance(fname_batch, list)):
-                    fname_batch = [fname_batch.decode().rstrip(".mseed") + "_" + x.decode() for x in station_batch]
-                else:
-                    fname_batch = [x.decode() for x in fname_batch]
                 pool.starmap(
                     partial(
                         plot_waveform,
@@ -189,10 +191,6 @@ def pred_fn(args, data_reader, figure_dir=None, prob_dir=None, log_dir=None):
 
             if args.save_prob:
                 # save_prob(pred_batch, fname_batch, prob_dir=prob_dir)
-                if not (isinstance(fname_batch, np.ndarray) or isinstance(fname_batch, list)):
-                    fname_batch = [fname_batch.decode().rstrip(".mseed") + "_" + x.decode() for x in station_batch]
-                else:
-                    fname_batch = [x.decode() for x in fname_batch]
                 save_prob_h5(pred_batch, fname_batch, prob_h5)
 
         if len(picks) > 0:

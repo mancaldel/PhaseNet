@@ -103,7 +103,7 @@ def extract_picks(
         pre_idx = int(config.pre_sec / dt)
         post_idx = int(config.post_sec / dt)
 
-    Nb, Nt, Ns, Nc = preds.shape
+    Nb, Nt, Ns, Nc = preds.shape  # batch, event_time, station, channel
 
     if file_names is None:
         file_names = [f"{i:04d}" for i in range(Nb)]
